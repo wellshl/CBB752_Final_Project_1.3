@@ -21,8 +21,12 @@
 #
 #             example.fastq: 
 
+install.packages("ShortRead")
+
 
 # DS start of code
+
+df <- 
 
 
 
