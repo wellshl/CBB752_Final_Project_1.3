@@ -6,11 +6,12 @@
 
 ### Usage: python QualityTrim.py -i <input fastq file> -s <qscore file> -t <threshold cutoff score> -o <output file type {fastq, fasta, both}> -m <minimum read length>
 ### Example: python QualityTrim.py -i input.txt -s qscore.txt -t 25 -o fastq -m 10 > outputfile.txt
-### Note: Requires input file in fastq format and score file in "|" separated format.
-###       If no threshold cutoff score is specified the default of 40 is used.
-###       If no output file type is specified the default fastq is used.
-###       If no minimum read length is specified, no minimum is used.
-###       To save output files, use >outputfile.txt 
+
+### Notes: Requires input file in fastq format and score file in "|" separated format.
+###        If no threshold cutoff score is specified the default of 40 is used.
+###        If no output file type is specified the default fastq is used.
+###        If no minimum read length is specified, no minimum is used.
+###        To save output files, use >outputfile.txt 
 
 #import arguments
 import argparse
@@ -30,7 +31,7 @@ def Trim(inputfile,scorefile,threshold,outputtype):
 
     #open and save inputs
     with open(args.input) as input:
-        input=input.read().splitlines()[0:100]
+        input=input.read().splitlines()
     with open(args.score) as scores:
         scores=numpy.loadtxt(scores,delimiter="|",dtype=str,comments=None)
 
