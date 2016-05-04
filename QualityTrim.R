@@ -21,14 +21,56 @@
 #
 #             example.fastq: 
 
-install.packages("ShortRead")
+source("http://bioconductor.org/biocLite.R")
+biocLite("ShortRead")
+library("ShortRead")
+
+df <- readFastq("example_100.fastq")
+
+numbers <- list()
+length(df)
+for ( i in 1:length(df) ) {
+  numbers[[i]] <- as(quality(df[i]), "numeric")
+}
+as(quality(df[25]), "numeric")
+
+setwd("~/Box Sync/coursework/CBB752_BioinformaticsMiningSimulation/final/CBB752_Final_Project_1.3/")
+fastqloc <- ("~/Box Sync/coursework/CBB752_BioinformaticsMiningSimulation/final/CBB752_Final_Project_1.3/example_100.fastq")
+qualscores <- read.table("qscore_conversion.txt", stringsAsFactors = F, sep = "\t", header = T, quote = "")
+
+txt <- readLines(fastqloc)
+split <- strsplit(as.character(txt), split = "")
 
 
-# DS start of code
+# every fourth line of the fastq file
+qualLines <- seq(4, length(split), by = 4)
 
-df <- 
+quals <- split[qualLines]
+
+match(quals[1], qualscores$char,nomatch = 0)
+
+for (i in qualLines){
+  window[i] <- 
+  
+}
 
 
+
+slideFunct <- function(data, window, step){
+  total <- length(data)
+  spots <- seq(from=1, to=(total-window), by=step)
+  result <- vector(length = length(spots))
+  for(i in 1:length(spots)){
+    result[i] <- mean(data[spots[i]:(spots[i]+window)])
+  }
+  return(result)
+}
+  
+sread(df)  
+}
+df(
+
+  df[1:5]
 
 
 # [[Notes from Mtg]]
