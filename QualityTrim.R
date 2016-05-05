@@ -8,8 +8,8 @@
 #
 # Created.date  : 27 Apr 2016
 # Created.by    : Dan Spakowicz
-# Updated.date  :  
-# Updated.by    : 
+# Updated.date  : 05 May 2016 
+# Updated.by    : DS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Usage: Rscript QualityTrim.py -i <input fastq file> -s <qscore file> -t <threshold cutoff score> -o <output file type {fastq, fasta, both}> -m <minimum read length>
@@ -114,8 +114,7 @@ Trim <- function(infile, scorefile, threshold, minimum, outputtype) {
   minlength.vec <- unlist(minlength)
   fastq.split.min <- fastq.split[minlength.vec]
   
-  # output fastq, fasta or both
-  
+  # output as fastq, fasta or both
   if ( outputtype == "fasta" ){
     
     a <- seq(from = 1, to = length(fastq.split.min), by = 4)
