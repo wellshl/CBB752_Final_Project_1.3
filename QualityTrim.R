@@ -133,12 +133,12 @@ Trim <- function(infile, scorefile, threshold, minimum, outputtype) {
   }
   
   if ( outputtype == "fastq" ){
-    fileFastq<-file("output.fastq")
+    fileFastq<-file("output_R.fastq")
     writeLines(unlist(lapply(fastq.split.min, paste, collapse="")), fileFastq)
     close(fileFastq)
   }
   if ( outputtype == "both" ){
-    fileFastq<-file("output.fastq")
+    fileFastq<-file("output_R.fastq")
     writeLines(unlist(lapply(fastq.split.min, paste, collapse="")), fileFastq)
     close(fileFastq)
     a <- seq(from = 1, to = length(fastq.split.min), by = 4)
@@ -150,7 +150,7 @@ Trim <- function(infile, scorefile, threshold, minimum, outputtype) {
         fasta[[i]][1] <- ">"
       }
     }
-    fileFasta<-file("output.fasta")
+    fileFasta<-file("output_R.fasta")
     writeLines(unlist(lapply(fasta, paste, collapse="")), fileFasta)
     close(fileFasta)
   }
