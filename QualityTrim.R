@@ -12,92 +12,150 @@
 # Updated.by    : 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Usage:      Rscript QualityTrim.R /path/to/inputfile.fastq /path/to/outputfile.fastq
-# Example:    example line
-# Note:       Input: fastq file, which is a text file with 1st row = header
-#             
-#           
-#             Output: a fastq with 3' ends truncated by quality score input
-#
-#             example.fastq: 
+### Usage: Rscript QualityTrim.py -i <input fastq file> -s <qscore file> -t <threshold cutoff score> -o <output file type {fastq, fasta, both}> -m <minimum read length>
+### Example: Rscript QualityTrim.py -i input.txt -s qscore.txt -t 25 -o fastq -m 10 > outputfile.txt
 
-source("http://bioconductor.org/biocLite.R")
-biocLite("ShortRead")
-library("ShortRead")
-
-df <- readFastq("example_100.fastq")
-
-numbers <- list()
-length(df)
-for ( i in 1:length(df) ) {
-  numbers[[i]] <- as(quality(df[i]), "numeric")
-}
-as(quality(df[25]), "numeric")
-
-setwd("~/Box Sync/coursework/CBB752_BioinformaticsMiningSimulation/final/CBB752_Final_Project_1.3/")
-fastqloc <- ("~/Box Sync/coursework/CBB752_BioinformaticsMiningSimulation/final/CBB752_Final_Project_1.3/example_100.fastq")
-qualscores <- read.table("qscore_conversion.txt", stringsAsFactors = F, sep = "\t", header = T, quote = "")
-
-txt <- readLines(fastqloc)
-split <- strsplit(as.character(txt), split = "")
+### Notes: Requires input file in fastq format and score file in "|" separated format.
+###        If no threshold cutoff score is specified the default of 40 is used.
+###        If no output file type is specified the default fastq is used.
+###        If no minimum read length is specified, no minimum is used.
+###        To save output files, use > outputfile.txt 
 
 
-# every fourth line of the fastq file
-qualLines <- seq(4, length(split), by = 4)
+rm(list=ls())
+oldw <- getOption("warn")
+options(warn = -1)
 
-quals <- split[qualLines]
+# Load the required packages
+list.of.packages <- c("optparse")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+library(optparse)
 
-match(quals[1], qualscores$char,nomatch = 0)
+# set arguments
+option_list = list(
+  make_option(c("-i", "--input"), type="character", default=NULL, 
+              help="input fastq file name", metavar="character"),
+  make_option(c("-s", "--score"), type="character", default="./qscores.txt", 
+              help="score file name", metavar="character"),
+  make_option(c("-t", "--threshold"), type="character", default=20, 
+              help="threshold cutoff score", metavar="character"),
+  make_option(c("-m", "--minimum"), type="character", default=0, 
+              help="minimum read length", metavar="character"),
+  make_option(c("-o", "--out"), type="character", 
+              default="fastq", 
+              help="output file type, must be one of the following: {fastq, fasta, both}, [default= %default]", 
+              metavar="character")
+); 
 
-for (i in qualLines){
-  window[i] <- 
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
+
+# infile <- "example_100.fastq"
+# scorefile <- "qscores.txt"
+# threshold <- 20
+# minimum <- 20
+# outputtype <- "fastq"
+
+# Trim function
+Trim <- function(infile, scorefile, threshold, minimum, outputtype) {
   
-}
-
-
-
-slideFunct <- function(data, window, step){
-  total <- length(data)
-  spots <- seq(from=1, to=(total-window), by=step)
-  result <- vector(length = length(spots))
-  for(i in 1:length(spots)){
-    result[i] <- mean(data[spots[i]:(spots[i]+window)])
+  # read in and format fastq file
+  input <- readLines(infile)
+  fastq.split <- strsplit(as.character(input), split = "")
+  
+  # read in the quality scores file
+  scorefile <- read.table(scorefile, sep = "|", quote = "", comment.char = "")
+  
+  # list of just the qual score lines
+  qualLines <- seq(4, length(input), by = 4)
+  qualscores <- fastq.split[qualLines]
+  
+  # convert ascii qual scores to phred scores
+  phred.scores <- vector("list", length(qualscores))
+  for ( i in 1:length(qualscores)) {
+    for (j in 1:length(qualscores[[i]])){
+      phred.scores[[i]][j] <- scorefile$V2[which(qualscores[[i]][j]==scorefile$V1)]
+    }
   }
-  return(result)
-}
   
-sread(df)  
+  # sliding window average over the phred scores
+  cut.logical <- vector("list", length(phred.scores))
+  for ( i in 1:length(phred.scores)) {
+    for (j in 1:length(phred.scores[[i]])){
+      cut.logical[[i]][j] <- sum(phred.scores[[i]][j:(j+3)])/4 < threshold
+        }
+    }
+  
+  # find the location of the first average less than the threshold (TRUE)
+  cut.loc <- vector("list", length(cut.logical))
+  for ( i in 1:length(cut.logical)) {
+    cut.loc[[i]] <- min(which(cut.logical[[i]] == TRUE))
+    if(cut.loc[[i]] == Inf){cut.loc[[i]] = length(cut.logical[[i]])}
+  }
+ 
+  # trim sequence and qual scores
+  cut.loc.vec <- unlist(cut.loc)
+  for (i in 1:length(cut.loc.vec)){
+    fastq.split[[(i*4-2)]] <- fastq.split[[(i*4-2)]][1:(cut.loc.vec[i]+1)]
+    fastq.split[[(i*4)]] <- fastq.split[[(i*4)]][1:(cut.loc.vec[i]+1)]
+  }
+  
+  # remove sequences shorter than the minimum length
+  minlength <- vector("list", length(qualLines))
+  for (i in qualLines){
+    minlength[[i]] <- length(fastq.split[[i]]) > minimum
+  }
+  for (i in qualLines){
+    minlength[[(i-3)]] <- minlength[[i]]
+    minlength[[(i-2)]] <- minlength[[i]]
+    minlength[[(i-1)]] <- minlength[[i]]
+  }
+  minlength.vec <- unlist(minlength)
+  fastq.split.min <- fastq.split[minlength.vec]
+  
+  # output fastq, fasta or both
+  
+  if ( outputtype == "fasta" ){
+    
+    a <- seq(from = 1, to = length(fastq.split.min), by = 4)
+    b <- seq(from = 2, to = length(fastq.split.min), by = 4)               
+    fastaLines <- c( matrix(c(a,b), nrow=2, byrow=TRUE) )
+    fasta <- fastq.split.min[fastaLines]
+    for ( i in 1: length(fasta)){
+      if(fasta[[i]][1]=="@"){
+        fasta[[i]][1] <- ">"
+      }
+    }
+    fileFasta<-file("output.fasta")
+    writeLines(unlist(lapply(fasta, paste, collapse="")), fileFasta)
+    close(fileFasta)
+  }
+  
+  if ( outputtype == "fastq" ){
+    fileFastq<-file("output.fastq")
+    writeLines(unlist(lapply(fastq.split.min, paste, collapse="")), fileFastq)
+    close(fileFastq)
+  }
+  if ( outputtype == "both" ){
+    fileFastq<-file("output.fastq")
+    writeLines(unlist(lapply(fastq.split.min, paste, collapse="")), fileFastq)
+    close(fileFastq)
+    a <- seq(from = 1, to = length(fastq.split.min), by = 4)
+    b <- seq(from = 2, to = length(fastq.split.min), by = 4)               
+    fastaLines <- c( matrix(c(a,b), nrow=2, byrow=TRUE) )
+    fasta <- fastq.split.min[fastaLines]
+    for ( i in 1: length(fasta)){
+      if(fasta[[i]][1]=="@"){
+        fasta[[i]][1] <- ">"
+      }
+    }
+    fileFasta<-file("output.fasta")
+    writeLines(unlist(lapply(fasta, paste, collapse="")), fileFasta)
+    close(fileFasta)
+  }
 }
-df(
 
-  df[1:5]
+Trim(opt$input, opt$score, opt$threshold, opt$minimum, opt$out)
 
-
-# [[Notes from Mtg]]
-#
-# Pre-paired end assembly
-# 
-# sliding window average for q score, ILMN
-# 
-# trim 3' end if average is lower
-# 
-# read length cutoff
-# 
-# default q-score but user input option
-# 
-# user specified output as fastq or fasta or both
-
-# read in data file
-# 
-# <<< send out data file to collabs
-# 
-# Q scores converted to #s
-# 
-# # set sliding window
-# 
-# start sliding at 5' end
-# if above threshold move windown
-# else cut
-# 
-# score less than threshold 
-# cut when ave Q below
+options(warn = oldw)  
