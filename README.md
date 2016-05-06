@@ -25,18 +25,3 @@ python QualityTrim.py -i input.fastq -s qscores.txt -f both -o python_example_ou
   
   Example output for the first 100 lines (25 sequences) of the example input file is included as "python_example_output.fastq" and "python_example_output.fasta"
   
-  
-## To use the R file: 
-
-Download "QualityTrim.R" and "qscores.txt", and optionally the example input file provided.
-  
-  Usage: 
-  
-```Rscript QualityTrim.R -i <input fastq file> -s <qscore file> -t <threshold cutoff score> -f <output file format {fastq, fasta, both}> -m <minimum read length> -o <output file base name>```
-  
-  
-  Example: 
-  
-```Rscript QualityTrim.R -i input.fastq -s qscore.txt -t 25 -f fastq -m 10 -o outputfile```
-  
-  An example output is shown as output_R.fasta and output_R.fastq
