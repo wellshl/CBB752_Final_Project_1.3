@@ -4,7 +4,7 @@
 ### Created Date: 01 May 2016
 ### Created By: Heather Wells
 
-### Usage: python QualityTrim.py -i <input fastq file> -s <qscore file> -t <threshold cutoff score> -o <output file type {fastq, fasta, both}> -m <minimum read length>
+### Usage: python QualityTrim.py -i <input fastq file> -s <qscore file> -t <threshold cutoff score> -m <minimum read length> -f <output file type {fastq, fasta, both}> -o <output file name>
 ### Example: python QualityTrim.py -i input.txt -s qscore.txt -t 25 -o fastq -m 10 > outputfile.txt
 
 ### Notes: Requires input file in fastq format and score file in "|" separated format.
@@ -19,8 +19,10 @@ parser=argparse.ArgumentParser(description='QualityTrim')
 parser.add_argument('-i', '--input', help='input file name', required=True)
 parser.add_argument('-s', '--score', help='score file name', required=True)
 parser.add_argument('-t', '--threshold', help='threshold cutoff score', default=20, type=int)
-parser.add_argument('-o', '--output', help='output file type, must be one of the following: {fastq, fasta, both}', default='fastq')
+parser.add_argument('-w', '--window', help='window size', default=4, type=int)
 parser.add_argument('-m', '--minimum', help='minimum read length', default=0, type=int)
+parser.add_argument('-f', '--outputtype', help='output file type, must be one of the following: {fastq, fasta, both}', default='fastq')
+parser.add_argument('-o', '--outputname', help='output file name', default="output")
 args=parser.parse_args()
 
 import re
@@ -31,7 +33,7 @@ def Trim(inputfile,scorefile,threshold,outputtype):
 
     #open and save inputs
     with open(args.input) as input:
-        input=input.read().splitlines()
+        input=input.read().splitlines()[0:100]
     with open(args.score) as scores:
         scores=numpy.loadtxt(scores,delimiter="|",dtype=str,comments=None)
 
@@ -52,12 +54,13 @@ def Trim(inputfile,scorefile,threshold,outputtype):
         #if the average is greater than the default for the entire loop, set cut to length of q_score_i (keeps entire sequence)
         #the sequence is the 2nd (i+1) of each chunk of 4 lines, only keep sequence up to the cut point
         q_score_i=[]
+        window=args.window
         for each in q_ascii_i:
             q_score_i.extend(map(int,scores[numpy.where(scores==each)[0],1]))
-        for j in range(len(q_score_i)-4):
-            avg=sum(q_score_i[j:j+4])/4
+        for j in range(len(q_score_i)-window):
+            avg=sum(q_score_i[j:j+window])/window
             if avg<args.threshold:
-                cut=j+2
+                cut=j+window/2
                 break
             else: cut=len(q_score_i)
         seq_i=input[i+1][0:cut]
@@ -67,13 +70,24 @@ def Trim(inputfile,scorefile,threshold,outputtype):
             fastq.extend(input[i]+"\n"+seq_i+"\n+\n"+input[i+3]+"\n")
             fasta.extend(">"+input[i]+"\n"+seq_i+"\n")
 
-    #print user-specified or default (fastq) output
-    if args.output=='fastq':
-        print "".join(fastq)
-    if args.output=='fasta':
-        print "".join(fasta)
-    if args.output=='both':
-        print "".join(fastq)
-        print "".join(fasta)
+    fastq="".join(fastq)
+    fasta="".join(fasta)
 
-Trim(args.input,args.score,args.threshold,args.output)
+    #save user-specified or default (fastq) output
+    if args.outputtype=='fastq':
+        fastq_file=open(args.outputname+".fastq","w")
+        fastq_file.write(fastq)
+        fastq_file.close()
+    if args.outputtype=='fasta':
+        fasta_file=open(args.outputname+".fasta","w")
+        fasta_file.write(fasta)
+        fasta_file.close()
+    if args.outputtype=='both':
+        fastq_file=open(args.outputname+".fastq","w")
+        fastq_file.write(fastq)
+        fastq_file.close()
+        fasta_file=open(args.outputname+".fasta","w")
+        fasta_file.write(fasta)
+        fasta_file.close()
+
+Trim(args.input,args.score,args.threshold,args.outputtype)
