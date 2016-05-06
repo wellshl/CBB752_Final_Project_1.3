@@ -42,9 +42,12 @@ option_list = list(
               help="threshold cutoff score", metavar="character"),
   make_option(c("-m", "--minimum"), type="character", default=0, 
               help="minimum read length", metavar="character"),
-  make_option(c("-o", "--out"), type="character", 
+  make_option(c("-f", "--format"), type="character", 
               default="fastq", 
               help="output file type, must be one of the following: {fastq, fasta, both}, [default= %default]", 
+              metavar="character"),
+  make_option(c("-o", "--out"), type="character", 
+              default="output_R", help="output file base name, [default= %default]", 
               metavar="character")
 ); 
 
@@ -58,7 +61,7 @@ opt = parse_args(opt_parser);
 # outputtype <- "fastq"
 
 # Trim function
-Trim <- function(infile, scorefile, threshold, minimum, outputtype) {
+Trim <- function(infile, scorefile, threshold, minimum, outputtype, outbase) {
   
   # read in and format fastq file
   input <- readLines(infile)
@@ -126,20 +129,21 @@ Trim <- function(infile, scorefile, threshold, minimum, outputtype) {
         fasta[[i]][1] <- ">"
       }
     }
-    fileFasta<-file("output.fasta")
+    fileFasta<-file(paste(outbase, ".fasta", sep = ""))
     writeLines(unlist(lapply(fasta, paste, collapse="")), fileFasta)
     close(fileFasta)
   }
   
   if ( outputtype == "fastq" ){
-    fileFastq<-file("output_R.fastq")
+    fileFastq<-file(paste(outbase, ".fastq", sep = ""))
     writeLines(unlist(lapply(fastq.split.min, paste, collapse="")), fileFastq)
     close(fileFastq)
   }
   if ( outputtype == "both" ){
-    fileFastq<-file("output_R.fastq")
+    fileFastq<-file(paste(outbase, ".fastq", sep = ""))
     writeLines(unlist(lapply(fastq.split.min, paste, collapse="")), fileFastq)
     close(fileFastq)
+    
     a <- seq(from = 1, to = length(fastq.split.min), by = 4)
     b <- seq(from = 2, to = length(fastq.split.min), by = 4)               
     fastaLines <- c( matrix(c(a,b), nrow=2, byrow=TRUE) )
@@ -149,12 +153,12 @@ Trim <- function(infile, scorefile, threshold, minimum, outputtype) {
         fasta[[i]][1] <- ">"
       }
     }
-    fileFasta<-file("output_R.fasta")
+    fileFasta<-file(paste(outbase, ".fasta", sep = ""))
     writeLines(unlist(lapply(fasta, paste, collapse="")), fileFasta)
     close(fileFasta)
   }
 }
 
-Trim(opt$input, opt$score, opt$threshold, opt$minimum, opt$out)
+Trim(opt$input, opt$score, opt$threshold, opt$minimum, opt$format, opt$out)
 
 options(warn = oldw)  
