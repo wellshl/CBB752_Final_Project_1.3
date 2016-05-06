@@ -21,8 +21,10 @@
 ###        If no minimum read length is specified, no minimum is used.
 ###        To save output files, use > outputfile.txt 
 
-
+# remove any stored functions
 rm(list=ls())
+
+# suppress warnings
 oldw <- getOption("warn")
 options(warn = -1)
 
@@ -38,9 +40,9 @@ option_list = list(
               help="input fastq file name", metavar="character"),
   make_option(c("-s", "--score"), type="character", default="./qscores.txt", 
               help="score file name", metavar="character"),
-  make_option(c("-t", "--threshold"), type="character", default=20, 
+  make_option(c("-t", "--threshold"), type="integer", default=20, 
               help="threshold cutoff score", metavar="character"),
-  make_option(c("-m", "--minimum"), type="character", default=0, 
+  make_option(c("-m", "--minimum"), type="integer", default=0, 
               help="minimum read length", metavar="character"),
   make_option(c("-f", "--format"), type="character", 
               default="fastq", 
@@ -54,11 +56,13 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
+# setwd("~/Box Sync/coursework/CBB752_BioinformaticsMiningSimulation/final/CBB752_Final_Project_1.3/")
 # infile <- "example_100.fastq"
 # scorefile <- "qscores.txt"
 # threshold <- 20
 # minimum <- 20
-# outputtype <- "fastq"
+# outputtype <- "both"
+# outbase <- "test"
 
 # Trim function
 Trim <- function(infile, scorefile, threshold, minimum, outputtype, outbase) {
@@ -161,4 +165,5 @@ Trim <- function(infile, scorefile, threshold, minimum, outputtype, outbase) {
 
 Trim(opt$input, opt$score, opt$threshold, opt$minimum, opt$format, opt$out)
 
+# return warnings to previous setting
 options(warn = oldw)  
