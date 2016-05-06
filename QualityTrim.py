@@ -33,7 +33,7 @@ def Trim(inputfile,scorefile,threshold,outputtype):
 
     #open and save inputs
     with open(args.input) as input:
-        input=input.read().splitlines()[0:100]
+        input=input.read().splitlines()
     with open(args.score) as scores:
         scores=numpy.loadtxt(scores,delimiter="|",dtype=str,comments=None)
 
